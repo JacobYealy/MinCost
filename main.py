@@ -17,32 +17,29 @@ def load_graph(file_name):
 
 def load_heuristic(file_name):
     heuristics = {}
-    min_edge_weights = []
-
     with open(file_name, 'r') as file:
         csv_reader = csv.reader(file)
+        for i in range(5):  # Skip the first 5 rows (headers)
+            next(csv_reader)
 
-        # Skip header, explanation, and empty rows
-        next(csv_reader)
-        next(csv_reader)
-        next(csv_reader)
+        # read the row containing min Edge weight directly from node if necessary
+        min_edge_weights = next(csv_reader)[1:]
 
-        # Read the minEdge values row
-        min_edge_weights = list(map(float, next(csv_reader)[1:]))
+        to_nodes = next(csv_reader)[1:]
+        for row in csv_reader:
+            if not row[0]:  # Skip empty rows or rows with empty "FROM" node
+                continue
 
-        # Skip TO row and header
-        next(csv_reader)
-        next(csv_reader)
+            try:
+                from_node = int(row[0])
+            except ValueError:
+                continue  # Skip rows that can't be converted to integer
 
-        # Reading heuristic values and calculate h based on minEdge values
-        for i, row in enumerate(csv_reader):
-            from_node = int(row[0])
             heuristics[from_node] = {}
-
-            for j, to_node_cost in enumerate(row[1:], 1):
-                if to_node_cost:
-                    h = (min_edge_weights[i] + min_edge_weights[j - 1]) / 2
-                    heuristics[from_node][j] = h
+            for to_node_str, h in zip(to_nodes, row[1:]):
+                if h:
+                    to_node = int(to_node_str)
+                    heuristics[from_node][to_node] = float(h)
     return heuristics
 
 
@@ -60,8 +57,13 @@ def a_star(graph, heuristic, start, goal):
             if neighbor in closed_set:
                 continue
 
+            if current not in heuristic or neighbor not in heuristic.get(current, {}):
+                continue  # Skip if heuristic for the current to neighbor is not available
+
             new_cost = cost + edge_cost
             heapq.heappush(open_set, (new_cost + heuristic[current][neighbor], neighbor, path + [current]))
+
+    return float('inf'), []
 
 
 if __name__ == "__main__":
