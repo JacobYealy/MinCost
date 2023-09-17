@@ -1,6 +1,7 @@
 import csv
 import heapq
 
+
 def load_graph(file_name):
     graph = {}
     with open(file_name, 'r') as file:
@@ -13,23 +14,35 @@ def load_graph(file_name):
             graph[from_node][to_node] = weight
     return graph
 
+
 def load_heuristic(file_name):
     heuristics = {}
+    min_edge_weights = []
+
     with open(file_name, 'r') as file:
         csv_reader = csv.reader(file)
+
+        # Skip header, explanation, and empty rows
+        next(csv_reader)
+        next(csv_reader)
+        next(csv_reader)
+
+        # Read the minEdge values row
+        min_edge_weights = list(map(float, next(csv_reader)[1:]))
+
+        # Skip TO row and header
+        next(csv_reader)
+        next(csv_reader)
+
+        # Reading heuristic values and calculate h based on minEdge values
         for i, row in enumerate(csv_reader):
-            if i < 5:  # Skip the first 5 rows (headers)
-                continue
-            if not row[0]:  # Skip empty rows or rows with empty "FROM" node
-                continue
-            try:
-                from_node = int(row[0])
-            except ValueError:
-                continue  # Skip rows that can't be converted to integer
+            from_node = int(row[0])
             heuristics[from_node] = {}
-            for to_node, h in enumerate(row[1:], 1):
-                if h:
-                    heuristics[from_node][to_node] = float(h)
+
+            for j, to_node_cost in enumerate(row[1:], 1):
+                if to_node_cost:
+                    h = (min_edge_weights[i] + min_edge_weights[j - 1]) / 2
+                    heuristics[from_node][j] = h
     return heuristics
 
 
@@ -50,7 +63,6 @@ def a_star(graph, heuristic, start, goal):
             new_cost = cost + edge_cost
             heapq.heappush(open_set, (new_cost + heuristic[current][neighbor], neighbor, path + [current]))
 
-    return float('inf'), []
 
 if __name__ == "__main__":
     edge_file = input("Please enter the edge weight file name and extension: ")
