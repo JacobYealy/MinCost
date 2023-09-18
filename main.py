@@ -1,83 +1,70 @@
 import csv
-import heapq
+from a_star import a_star_search
+from ida_star import ida_star_search
 
+# =============================================================================
+# main.py
+# Jacob Yealy & Caden Rosenberry
+# Artificial Intelligence
+#
+# Description:
+# This program takes an input edge weight file and an input heuristic file
+# and then performs the A* minimum path cost finding algorithm.
+# =============================================================================
 
-def load_graph(file_name):
+def read_csv_file(filename):
     graph = {}
-    with open(file_name, 'r') as file:
+    with open(filename, 'r') as file:
         csv_reader = csv.reader(file)
-        next(csv_reader)  # Skip header
         for row in csv_reader:
-            from_node, to_node, weight = int(row[0]), int(row[1]), float(row[2])
-            if from_node not in graph:
-                graph[from_node] = {}
-            graph[from_node][to_node] = weight
+            try:
+                from_node, to_node, cost = map(float, row)
+                if from_node not in graph:
+                    graph[from_node] = {}
+                graph[from_node][to_node] = cost
+            except ValueError:
+                pass
     return graph
 
-
-def load_heuristic(file_name):
-    heuristics = {}
-    with open(file_name, 'r') as file:
-        csv_reader = csv.reader(file)
-        for i in range(5):  # Skip the first 5 rows (headers)
-            next(csv_reader)
-
-        # read the row containing min Edge weight directly from node if necessary
-        min_edge_weights = next(csv_reader)[1:]
-
-        to_nodes = next(csv_reader)[1:]
-        for row in csv_reader:
-            if not row[0]:  # Skip empty rows or rows with empty "FROM" node
-                continue
-
-            try:
-                from_node = int(row[0])
-            except ValueError:
-                continue  # Skip rows that can't be converted to integer
-
-            heuristics[from_node] = {}
-            for to_node_str, h in zip(to_nodes, row[1:]):
-                if h:
-                    to_node = int(to_node_str)
-                    heuristics[from_node][to_node] = float(h)
-    return heuristics
-
-
-def a_star(graph, heuristic, start, goal):
-    open_set = [(0, start, [])]  # (cost, current_node, path)
-    closed_set = set()
-
-    while open_set:
-        cost, current, path = heapq.heappop(open_set)
-        if current == goal:
-            return cost, path + [current]
-
-        closed_set.add(current)
-        for neighbor, edge_cost in graph.get(current, {}).items():
-            if neighbor in closed_set:
-                continue
-
-            if current not in heuristic or neighbor not in heuristic.get(current, {}):
-                continue  # Skip if heuristic for the current to neighbor is not available
-
-            new_cost = cost + edge_cost
-            heapq.heappush(open_set, (new_cost + heuristic[current][neighbor], neighbor, path + [current]))
-
-    return float('inf'), []
-
-
-if __name__ == "__main__":
+def main():
     edge_file = input("Please enter the edge weight file name and extension: ")
     heuristic_file = input("Please enter the heuristic file name and extension: ")
-    start_node = int(input("Start node (1 – 200): "))
-    end_node = int(input("End Node (1 – 200): "))
 
-    graph = load_graph(edge_file)
-    heuristic = load_heuristic(heuristic_file)
+    try:
+        graph = read_csv_file(edge_file)
+        h_costs = read_csv_file(heuristic_file)
+    except FileNotFoundError:
+        print("File not found. Exiting.")
+        return
 
-    cost, path = a_star(graph, heuristic, start_node, end_node)
+    valid_keys = [node for node in graph.keys() if isinstance(node, (int, float))]
 
-    if path:
+    if not valid_keys:
+        print("No valid nodes found in the graph. Exiting.")
+        return
+
+    min_node = min(int(node) for node in valid_keys)
+    max_node = max(int(node) for node in valid_keys)
+
+    start = float(input(f"Start node ({min_node} – {max_node}): "))
+    end = float(input(f"End Node ({min_node} – {max_node}): "))
+
+    if start not in graph or end not in graph:
+        print("Invalid node ID. Exiting.")
+        return
+
+    cost, path = a_star_search(graph, h_costs, start, end)
+
+    if cost is not None:
         print(f"A* minimum cost path\n[{cost}] {' – '.join(map(str, path))}")
     else:
-        print("No path exists between the two nodes.")
+        print("No path exists.")
+
+    path_ida = ida_star_search(graph, h_costs, start, end)
+    if path_ida is not None:
+        print(f"IDA* path\n{' – '.join(map(str, path_ida))}")
+    else:
+        print("No path exists in IDA*.")
+
+if __name__ == "__main__":
+    main()
