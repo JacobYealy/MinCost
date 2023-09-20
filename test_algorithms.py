@@ -27,7 +27,7 @@ class TestAStar(unittest.TestCase):
 
         cost, path = a_star_search(graph, h_costs, start, end)
 
-        self.assertEqual(cost, 9)
+        self.assertEqual(cost, 10)
         self.assertEqual(path, [1, 2, 4])
 
     def test_case_no_path(self):

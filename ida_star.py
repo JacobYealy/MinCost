@@ -14,52 +14,47 @@ def ida_star_search(graph, h_costs, start, goal):
         Returns:
         - A list that represents the path from the start node to the goal node.
         """
-    def dfs(node, g, threshold, path):
-        # Calculate the f-value of the current node
-        f = g + h_costs.get(node, 0)
 
-        # If the f-value exceeds the current threshold, return f
+    def dfs(node, g, threshold, path):
+        f = g + h_costs.get(node, 0)
         if f > threshold:
-            return f
+            return f, g  # return path/cost
 
         if node == goal:
             path.append(node)
-            return 'FOUND'
+            return 'FOUND', g
 
-        # Init the minimum f to infinity
         path.append(node)
         min_f = float('inf')
 
-        # Loop through all neighbors of the current node
         for neighbor, cost in graph.get(node, {}).items():
             if neighbor in path:
                 continue
 
-            result = dfs(neighbor, g + cost, threshold, path)
+            result, new_g = dfs(neighbor, g + cost, threshold, path)  # Unpack returned values
 
             if result == 'FOUND':
-                return 'FOUND'
+                return 'FOUND', new_g
 
             if result < float('inf'):
                 min_f = min(min_f, result)
 
-        # Pop current node before backtracking
         path.pop()
-        return min_f
+        return min_f, g
 
     threshold = h_costs.get(start, 0)
+    total_cost = 0  # Initialize a variable to keep track of the total cost
 
     while True:
         print(f"Current threshold: {threshold}")
 
         path = []
-        result = dfs(start, 0, threshold, path)
+        result, new_cost = dfs(start, 0, threshold, path)  # Unpack returned values
 
-        # If we found the goal node, return the path
         if result == 'FOUND':
-            return path
+            return new_cost, path  # Return cost and path
 
         if result == float('inf'):
-            return None
+            return None, None  # Return None for both cost and path
 
         threshold = result

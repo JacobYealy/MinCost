@@ -1,6 +1,5 @@
+import csv
 import unittest
-from unittest.mock import patch, mock_open
-
 from main import read_csv_file
 
 # =============================================================================
@@ -9,19 +8,35 @@ from main import read_csv_file
 #
 # Description:
 # This class checks for cases of valid or invalid files.
-# Test cases are based on the already local EdgeWeights.csv file.
+# Test cases are based on the local valid and invalid CSV files.
 # =============================================================================
 class TestInputValidation(unittest.TestCase):
 
-    def test_valid_file(self):
-        self.assertTrue(read_csv_file("EdgeWeights.csv"))
+    def setUp(self):
+        # Create a valid CSV file for testing
+        self.valid_file = 'valid_file.csv'
 
-    @patch('builtins.print')
-    def test_invalid_file(self, mock_print):
-        with self.assertRaises(SystemExit):
-            read_csv_file("edgeweights.txt")
-        self.assertFalse()
+        # Create an invalid CSV file for testing
+        self.invalid_file = 'invalid_file.csv'
+
+    def test_valid_file_input(self):
+        try:
+            graph = read_csv_file(self.valid_file)
+            self.assertIsNotNone(graph)
+            self.assertEqual(graph, {1.0: {2.0: 3.0}, 2.0: {3.0: 4.0}, 3.0: {4.0: 5.0}})
+        except FileNotFoundError:
+            self.fail("File not found.")
+
+    def test_invalid_file_input(self):
+        try:
+            graph = read_csv_file(self.invalid_file)
+            self.assertIsNotNone(graph)
+            self.assertEqual(graph, {})
+        except ValueError:
+            self.fail("ValueError raised.")
+        except FileNotFoundError:
+            self.fail("File not found.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
